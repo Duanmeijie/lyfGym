@@ -1,34 +1,44 @@
 <template>
   <div class="ai-assistant">
     <button v-if="!isOpen" class="chat-toggle" @click="isOpen = true">
-      AI Assistant
+      AI
     </button>
     
     <div v-else class="chat-window">
       <div class="chat-header">
         <span>AI Assistant</span>
-        <button @click="isOpen = false">&times;</button>
+        <button class="close-btn" @click="isOpen = false">&times;</button>
+      </div>
+      
+      <div class="model-selector">
+        <select v-model="selectedModel">
+          <option value="gpt-4o-mini">GPT-4o Mini (Free)</option>
+          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          <option value="llama-3-8b">Llama 3 8B</option>
+          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+        </select>
       </div>
       
       <div class="chat-body" ref="chatBody">
         <div 
-          v-for="(msg, index) in messages" 
+          v-for="(msg, index) in chatHistory" 
           :key="index" 
           class="message" 
-          :class="msg.role"
+          :class="msg.role === 'user' ? 'user' : 'assistant'"
         >
           <div class="content">{{ msg.content }}</div>
         </div>
-        <div v-if="loading" class="message ai">
+        <div v-if="loading" class="message assistant">
           <div class="content">Thinking...</div>
         </div>
       </div>
       
-      <div class="chat-input">
+      <div class="chat-footer">
         <input 
           v-model="inputText" 
           placeholder="Ask me anything..." 
           @keyup.enter="sendMessage"
+          :disabled="loading"
         />
         <button @click="sendMessage" :disabled="loading">Send</button>
       </div>
@@ -38,12 +48,12 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import axios from 'axios'
 
 const isOpen = ref(false)
 const inputText = ref('')
-const messages = ref([
-  { role: 'ai', content: 'Hello! I am your fitness assistant. Ask me about members, coaches, or get management advice!' }
+const selectedModel = ref('gpt-4o-mini')
+const chatHistory = ref([
+  { role: 'assistant', content: 'Hello! I am your fitness assistant. Ask me about members, coaches, or get management advice!' }
 ])
 const loading = ref(false)
 const chatBody = ref(null)
@@ -52,7 +62,7 @@ const sendMessage = async () => {
   if (!inputText.value.trim() || loading.value) return
   
   const userMsg = inputText.value
-  messages.value.push({ role: 'user', content: userMsg })
+  chatHistory.value.push({ role: 'user', content: userMsg })
   inputText.value = ''
   loading.value = true
   
@@ -62,10 +72,25 @@ const sendMessage = async () => {
   }
   
   try {
-    const response = await axios.post('/api/ai/chat', { message: userMsg })
-    messages.value.push({ role: 'ai', content: response.data.reply })
+    const history = chatHistory.value.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.content
+    }))
+    
+    const response = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: userMsg,
+        model: selectedModel.value,
+        history: history
+      })
+    })
+    
+    const data = await response.json()
+    chatHistory.value.push({ role: 'assistant', content: data.reply })
   } catch (error) {
-    messages.value.push({ role: 'ai', content: 'Sorry, service is temporarily unavailable.' })
+    chatHistory.value.push({ role: 'assistant', content: 'Sorry, service is temporarily unavailable.' })
   } finally {
     loading.value = false
     await nextTick()
@@ -117,38 +142,41 @@ const sendMessage = async () => {
   padding: 15px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-weight: bold;
 }
 
-.chat-header button {
+.close-btn {
   background: none;
   border: none;
   color: white;
-  cursor: pointer;
   font-size: 20px;
+  cursor: pointer;
+}
+
+.model-selector {
+  padding: 10px 15px;
+  background: #f3f4f6;
+  border-bottom: 1px solid #eee;
+}
+
+.model-selector select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
 }
 
 .chat-body {
   flex: 1;
   padding: 15px;
   overflow-y: auto;
-  background: #f3f4f6;
+  background: #f9f9f9;
 }
 
 .message {
   margin-bottom: 10px;
-  display: flex;
-}
-
-.message.user {
-  justify-content: flex-end;
-}
-
-.message.ai {
-  justify-content: flex-start;
-}
-
-.content {
   padding: 10px 15px;
   border-radius: 18px;
   max-width: 80%;
@@ -156,45 +184,54 @@ const sendMessage = async () => {
   line-height: 1.4;
 }
 
-.message.user .content {
+.message.user {
+  align-self: flex-end;
   background: #10b981;
   color: white;
   border-bottom-right-radius: 4px;
+  margin-left: auto;
 }
 
-.message.ai .content {
+.message.assistant {
+  align-self: flex-start;
   background: white;
   color: #333;
   border-bottom-left-radius: 4px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
-.chat-input {
+.chat-footer {
   padding: 15px;
   background: white;
   display: flex;
+  gap: 10px;
   border-top: 1px solid #eee;
 }
 
-.chat-input input {
+.chat-footer input {
   flex: 1;
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 20px;
   outline: none;
-  margin-right: 10px;
+  font-size: 14px;
 }
 
-.chat-input button {
+.chat-footer input:disabled {
+  background: #f3f4f6;
+}
+
+.chat-footer button {
   background: #10b981;
   color: white;
   border: none;
-  padding: 8px 15px;
+  padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
+  font-size: 14px;
 }
 
-.chat-input button:disabled {
+.chat-footer button:disabled {
   background: #999;
   cursor: not-allowed;
 }
