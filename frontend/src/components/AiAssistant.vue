@@ -1,21 +1,18 @@
 <template>
   <div class="ai-assistant">
     <button v-if="!isOpen" class="chat-toggle" @click="isOpen = true">
-      AI
+      小飞
     </button>
     
     <div v-else class="chat-window">
       <div class="chat-header">
-        <span>AI Assistant</span>
+        <span>小飞</span>
         <button class="close-btn" @click="isOpen = false">&times;</button>
       </div>
       
       <div class="model-selector">
         <select v-model="selectedModel">
-          <option value="gpt-4o-mini">GPT-4o Mini (Free)</option>
-          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-          <option value="llama-3-8b">Llama 3 8B</option>
-          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+          <option value="minimax-m2.5-free">minimax-m2.5-free (推荐)</option>
         </select>
       </div>
       
@@ -29,18 +26,18 @@
           <div class="content">{{ msg.content }}</div>
         </div>
         <div v-if="loading" class="message assistant">
-          <div class="content">Thinking...</div>
+          <div class="content">正在思考...</div>
         </div>
       </div>
       
       <div class="chat-footer">
         <input 
           v-model="inputText" 
-          placeholder="Ask me anything..." 
+          placeholder="问我什么都可以..." 
           @keyup.enter="sendMessage"
           :disabled="loading"
         />
-        <button @click="sendMessage" :disabled="loading">Send</button>
+        <button @click="sendMessage" :disabled="loading">发送</button>
       </div>
     </div>
   </div>
@@ -51,9 +48,9 @@ import { ref, nextTick } from 'vue'
 
 const isOpen = ref(false)
 const inputText = ref('')
-const selectedModel = ref('gpt-4o-mini')
+const selectedModel = ref('minimax-m2.5-free')
 const chatHistory = ref([
-  { role: 'assistant', content: 'Hello! I am your fitness assistant. Ask me about members, coaches, or get management advice!' }
+  { role: 'assistant', content: '你好！我是你的健身助手小飞。你可以问我关于会员、教练的问题，或者寻求管理建议！' }
 ])
 const loading = ref(false)
 const chatBody = ref(null)
@@ -90,7 +87,7 @@ const sendMessage = async () => {
     const data = await response.json()
     chatHistory.value.push({ role: 'assistant', content: data.reply })
   } catch (error) {
-    chatHistory.value.push({ role: 'assistant', content: 'Sorry, service is temporarily unavailable.' })
+    chatHistory.value.push({ role: 'assistant', content: '抱歉，服务暂时不可用。' })
   } finally {
     loading.value = false
     await nextTick()

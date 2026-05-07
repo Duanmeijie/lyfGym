@@ -27,18 +27,16 @@ const router = createRouter({
 });
 
 // 全局前置守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const token = localStorage.getItem('token');
   const requiresAuth = to.meta.requiresAuth !== false;
   
   // 需要认证的页面且没有token，跳转登录页
   if (requiresAuth && !token) {
-    next('/login');
+    return '/login';
   } else if (to.path === '/login' && token) {
     // 已登录访问登录页，跳转首页
-    next('/dashboard');
-  } else {
-    next();
+    return '/dashboard';
   }
 });
 
