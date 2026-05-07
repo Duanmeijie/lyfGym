@@ -4,12 +4,28 @@ const router = express.Router();
 const { pool } = require('../db');
 const { OpenAI } = require('openai');
 
-const openai = new OpenAI({
-    apiKey: process.env.ZEN_API_KEY,
-    baseURL: "https://api.opencode.com/v1"
-});
+const ZEN_API_KEY = process.env.VITE_ZEN_API_KEY || process.env.ZEN_API_KEY;
 
 const DEFAULT_MODEL = "minimax-m2.5-free";
+
+const MODEL_CONFIG = {
+    'minimax-m2.5-free': {
+        baseURL: 'https://api.opencode.com/v1',
+        forceCN: true
+    },
+    'gpt-4o-mini': {
+        baseURL: 'https://api.opencode.com/v1',
+        forceCN: true
+    },
+    'gpt-3.5-turbo': {
+        baseURL: 'https://api.opencode.com/v1',
+        forceCN: true
+    },
+    'claude-3-haiku': {
+        baseURL: 'https://api.opencode.com/v1',
+        forceCN: true
+    }
+};
 
 const getDbStats = async () => {
     try {
@@ -34,6 +50,11 @@ router.post('/chat', async (req, res) => {
         return res.status(400).json({ reply: '请输入消息内容' });
     }
     
+    const modelConfig = MODEL_CONFIG[model];
+    if (!modelConfig) {
+        return res.status(400).json({ reply: '不支持的模型: ' + model });
+    }
+    
     try {
         const stats = await getDbStats();
         
@@ -46,7 +67,12 @@ ${stats ? `当前健身房数据：总会员数 ${stats.totalMembers} 人，活�
             { role: "user", content: message }
         ];
         
-        const completion = await openai.chat.completions.create({
+        const client = new OpenAI({
+            apiKey: ZEN_API_KEY,
+            baseURL: modelConfig.baseURL
+        });
+        
+        const completion = await client.chat.completions.create({
             model: model,
             messages: messages,
             temperature: 0.7,
