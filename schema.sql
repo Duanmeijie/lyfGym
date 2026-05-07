@@ -17,9 +17,12 @@ CREATE TABLE IF NOT EXISTS members (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   phone VARCHAR(20) NOT NULL UNIQUE,
+  avatar_url VARCHAR(500),
   type ENUM('月卡', '季卡', '年卡') DEFAULT '月卡',
   days_left INT DEFAULT 0,
-  status ENUM('有效', '过期') DEFAULT '有效',
+  status ENUM('有效', '过期', '冻结') DEFAULT '有效',
+  weight DECIMAL(5,1),
+  body_fat DECIMAL(4,1),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -28,18 +31,33 @@ CREATE TABLE IF NOT EXISTS coaches (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   specialty VARCHAR(255),
-  tags VARCHAR(255),
+  bio VARCHAR(1000),
   avatar_url VARCHAR(500),
   experience INT DEFAULT 0,
   is_gold BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 插入示例会员数据（可选）
--- INSERT INTO members (name, phone, type, days_left, status) VALUES
---   ('张三', '13800138001', '年卡', 120, '有效'),
---   ('李四', '13800138002', '月卡', 5, '有效');
+-- 创建courses表（课程/团课表）
+CREATE TABLE IF NOT EXISTS courses (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  coach_id INT,
+  day_of_week VARCHAR(10),
+  start_time TIME,
+  end_time TIME,
+  max_capacity INT DEFAULT 20,
+  booked_count INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (coach_id) REFERENCES coaches(id)
+);
 
--- 插入示例教练数据（可选）
--- INSERT INTO coaches (name, specialty, tags, experience, is_gold) VALUES
---   ('张教练', '增肌、力量训练', '金牌,5年经验', 5, TRUE);
+-- 创建products表（商品表）
+CREATE TABLE IF NOT EXISTS products (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  price DECIMAL(10,2),
+  stock INT DEFAULT 0,
+  image_url VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
