@@ -37,6 +37,9 @@
       <main class="content">
         <router-view />
       </main>
+      
+      <!-- AI 助手 -->
+      <AiAssistant />
     </div>
   </div>
 </template>
@@ -44,6 +47,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import AiAssistant from '@/components/AiAssistant.vue';
 
 const router = useRouter();
 const currentDate = ref('');
