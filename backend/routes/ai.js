@@ -5,7 +5,7 @@ const { pool } = require('../db');
 const { OpenAI } = require('openai');
 
 const openai = new OpenAI({
-    apiKey: process.env.VITE_ZEN_API_KEY || process.env.OPENAI_API_KEY,
+    apiKey: process.env.ZEN_API_KEY,
     baseURL: "https://api.opencode.com/v1"
 });
 

@@ -12,7 +12,9 @@
       
       <div class="model-selector">
         <select v-model="selectedModel">
-          <option value="minimax-m2.5-free">minimax-m2.5-free (推荐)</option>
+          <option v-for="model in modelOptions" :key="model.value" :value="model.value">
+            {{ model.label }}
+          </option>
         </select>
       </div>
       
@@ -48,7 +50,16 @@ import { ref, nextTick } from 'vue'
 
 const isOpen = ref(false)
 const inputText = ref('')
-const selectedModel = ref('minimax-m2.5-free')
+
+const modelOptions = [
+  { value: 'minimax-m2.5-free', label: 'minimax-m2.5-free (推荐)' },
+  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+  { value: 'claude-3-haiku', label: 'Claude 3 Haiku' }
+]
+
+const selectedModel = ref(modelOptions[0].value)
+
 const chatHistory = ref([
   { role: 'assistant', content: '你好！我是你的健身助手小飞。你可以问我关于会员、教练的问题，或者寻求管理建议！' }
 ])
