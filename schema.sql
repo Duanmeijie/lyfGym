@@ -43,13 +43,37 @@ CREATE TABLE IF NOT EXISTS courses (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   coach_id INT,
+  type VARCHAR(50),
   day_of_week VARCHAR(10),
+  start_date DATE,
   start_time TIME,
   end_time TIME,
+  duration_hours DECIMAL(4,1),
   max_capacity INT DEFAULT 20,
   booked_count INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (coach_id) REFERENCES coaches(id)
+);
+
+-- 创建bookings表（课程预约表）
+CREATE TABLE IF NOT EXISTS bookings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  member_id INT,
+  course_id INT,
+  status ENUM('booked', 'cancelled', 'completed') DEFAULT 'booked',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (member_id) REFERENCES members(id),
+  FOREIGN KEY (course_id) REFERENCES courses(id)
+);
+
+-- 创建orders表（购买记录表）
+CREATE TABLE IF NOT EXISTS orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  member_id INT,
+  amount DECIMAL(10,2),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (member_id) REFERENCES members(id)
 );
 
 -- 创建products表（商品表）

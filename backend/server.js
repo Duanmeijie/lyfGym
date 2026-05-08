@@ -19,6 +19,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/members', require('./routes/member'));
 app.use('/api/coaches', require('./routes/coach'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/courses', require('./routes/course'));
 app.use('/api', require('./routes/test'));
 
 // 测试接口

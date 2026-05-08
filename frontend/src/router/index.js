@@ -15,6 +15,7 @@ const routes = [
       { path: 'dashboard', name: 'Dashboard', component: () => import('../views/DashboardView.vue') },
       { path: 'coaches', name: 'Coaches', component: () => import('../views/CoachView.vue') },
       { path: 'courses', name: 'Courses', component: () => import('../views/CourseView.vue') },
+      { path: 'members', name: 'Members', component: () => import('../views/MemberView.vue') },
       { path: '', redirect: '/dashboard' }
     ]
   },

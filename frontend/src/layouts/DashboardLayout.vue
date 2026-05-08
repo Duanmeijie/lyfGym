@@ -54,10 +54,9 @@ const currentDate = ref('');
 let timer = null;
 
 const menuItems = [
-  { key: 'members', path: '/dashboard', label: '会员管理', icon: '👥' },
+  { key: 'members', path: '/members', label: '会员管理', icon: '👥' },
   { key: 'coaches', path: '/coaches', label: '教练管理', icon: '💪' },
-  { key: 'courses', path: '/courses', label: '课程管理', icon: '📅' },
-  { key: 'settings', path: '/settings', label: '系统设置', icon: '⚙️' }
+  { key: 'courses', path: '/courses', label: '课程管理', icon: '📅' }
 ];
 
 const handleLogout = () => {
