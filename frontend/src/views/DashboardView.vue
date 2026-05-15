@@ -1,503 +1,499 @@
 <template>
-  <!-- 统计卡片 -->
-  <div class="stats-cards">
-    <div class="stat-card">
-      <div class="stat-label">总会员数</div>
-      <div class="stat-value">{{ members.length }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">今日新增</div>
-      <div class="stat-value">{{ todayNew }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">即将过期（7天内）</div>
-      <div class="stat-value">{{ expiringSoon }}</div>
-    </div>
-  </div>
-
-  <!-- 图表区域 -->
-  <div class="charts-row">
-    <MemberTypeChart :members="members" />
-    <NewMembersChart :members="members" />
-  </div>
-
-  <!-- 添加按钮 -->
-  <div class="action-bar">
-    <button class="btn-add" @click="openModal">+ 添加新会员</button>
-  </div>
-
-  <!-- 会员表格 -->
-  <div class="table-container">
-    <h2 class="section-title">会员管理</h2>
-    <div v-if="loading" class="loading">加载中...</div>
-    <table v-else class="members-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>姓名</th>
-          <th>手机号</th>
-          <th>会员类型</th>
-          <th>剩余天数</th>
-          <th>状态</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(member, index) in members"
-          :key="member.id"
-          :class="['table-row', { 'row-even': index % 2 === 1 }]"
-        >
-          <td>{{ member.id }}</td>
-          <td>{{ member.name }}</td>
-          <td>{{ member.phone }}</td>
-          <td>{{ member.type }}</td>
-          <td>{{ member.days_left }}</td>
-          <td>
-            <span :class="['status-badge', member.status === '有效' ? 'status-active' : 'status-expired']">
-              {{ member.status }}
-            </span>
-          </td>
-          <td>
-            <button class="btn-edit" @click="handleEdit(member)">编辑</button>
-            <button class="btn-delete" @click="handleDelete(member.id)">删除</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- 模态框 -->
-  <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>添加新会员</h3>
-        <button class="modal-close" @click="closeModal">&times;</button>
+  <div class="dashboard">
+    <div class="stats-cards">
+      <div class="stat-card stat-card-members">
+        <div class="stat-icon">👥</div>
+        <div class="stat-body">
+          <div class="stat-label">总会员数</div>
+          <div class="stat-value">{{ stats.totalMembers }}</div>
+          <div class="stat-change" v-if="stats.newMembersToday > 0">今日 +{{ stats.newMembersToday }}</div>
+        </div>
       </div>
-      <form @submit.prevent="handleAddMember" class="modal-form">
-        <div class="form-group">
-          <label>姓名</label>
-          <input v-model="formData.name" type="text" placeholder="请输入姓名" required />
+      <div class="stat-card stat-card-active">
+        <div class="stat-icon">✅</div>
+        <div class="stat-body">
+          <div class="stat-label">有效会员</div>
+          <div class="stat-value">{{ stats.activeMembers }}</div>
         </div>
-        <div class="form-group">
-          <label>手机号</label>
-          <input v-model="formData.phone" type="tel" placeholder="请输入手机号" required />
+      </div>
+      <div class="stat-card stat-card-warning">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-body">
+          <div class="stat-label">即将过期 (7天)</div>
+          <div class="stat-value">{{ stats.expiringSoon }}</div>
         </div>
-        <div class="form-group">
-          <label>会员类型</label>
-          <select v-model="formData.type" required>
-            <option value="" disabled>请选择</option>
-            <option value="月卡">月卡</option>
-            <option value="季卡">季卡</option>
-            <option value="年卡">年卡</option>
-          </select>
+      </div>
+      <div class="stat-card stat-card-revenue">
+        <div class="stat-icon">💰</div>
+        <div class="stat-body">
+          <div class="stat-label">本月收入</div>
+          <div class="stat-value">¥{{ stats.monthlyRevenue }}</div>
         </div>
-        <div class="form-group">
-          <label>剩余天数</label>
-          <input v-model.number="formData.days_left" type="number" min="0" placeholder="请输入剩余天数" required />
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-main">
+        <div class="charts-row">
+          <MemberTypeChart :members="members" />
+          <NewMembersChart :members="members" />
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-cancel" @click="closeModal">取消</button>
-          <button type="submit" class="btn-confirm" :disabled="submitting">
-            {{ submitting ? '提交中...' : '确认添加' }}
-          </button>
+
+        <div class="section-card">
+          <div class="card-header">
+            <h3 class="card-title">📋 近期课程</h3>
+            <router-link to="/courses" class="card-more">查看全部 →</router-link>
+          </div>
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>课程名称</th>
+                <th>教练</th>
+                <th>日期</th>
+                <th>时间</th>
+                <th>预约情况</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="course in recentCourses" :key="course.id">
+                <td class="td-name">{{ course.name }}</td>
+                <td>{{ course.coach_name }}</td>
+                <td>{{ course.start_date }}</td>
+                <td>{{ course.start_time?.slice(0, 5) }}</td>
+                <td>
+                  <span class="booking-progress">
+                    <span class="progress-bar">
+                      <span class="progress-fill" :style="{ width: (course.booked_count / course.max_capacity * 100) + '%' }"></span>
+                    </span>
+                    <span class="progress-text">{{ course.booked_count }}/{{ course.max_capacity }}</span>
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="recentCourses.length === 0">
+                <td colspan="5" class="empty-cell">暂无课程安排</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </form>
+      </div>
+
+      <div class="dashboard-side">
+        <div class="section-card">
+          <div class="card-header">
+            <h3 class="card-title">📢 最新公告</h3>
+            <router-link to="/announcements" class="card-more">更多 →</router-link>
+          </div>
+          <div class="announcement-list">
+            <div v-for="item in announcements" :key="item.id" class="announcement-item">
+              <span :class="['ann-type-badge', 'type-' + item.type]">{{ item.type }}</span>
+              <div class="ann-content">
+                <div class="ann-title">{{ item.title }}</div>
+                <div class="ann-date">{{ formatDate(item.created_at) }}</div>
+              </div>
+            </div>
+            <div v-if="announcements.length === 0" class="empty-cell">暂无公告</div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="card-header">
+            <h3 class="card-title">⚡ 快捷操作</h3>
+          </div>
+          <div class="quick-actions">
+            <router-link to="/members" class="quick-action-btn">
+              <span class="qa-icon">👥</span>
+              <span class="qa-label">会员管理</span>
+            </router-link>
+            <router-link to="/coaches" class="quick-action-btn">
+              <span class="qa-icon">💪</span>
+              <span class="qa-label">教练管理</span>
+            </router-link>
+            <router-link to="/courses" class="quick-action-btn">
+              <span class="qa-icon">📅</span>
+              <span class="qa-label">课程管理</span>
+            </router-link>
+            <router-link to="/revenue" class="quick-action-btn">
+              <span class="qa-icon">💰</span>
+              <span class="qa-label">营收统计</span>
+            </router-link>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="card-header">
+            <h3 class="card-title">📊 系统概况</h3>
+          </div>
+          <div class="system-stats">
+            <div class="sys-stat">
+              <span class="sys-label">教练总数</span>
+              <span class="sys-value">{{ stats.coachCount }}</span>
+            </div>
+            <div class="sys-stat">
+              <span class="sys-label">课程总数</span>
+              <span class="sys-value">{{ stats.courseCount }}</span>
+            </div>
+            <div class="sys-stat">
+              <span class="sys-label">商品总数</span>
+              <span class="sys-value">{{ stats.productCount }}</span>
+            </div>
+            <div class="sys-stat">
+              <span class="sys-label">今日签到</span>
+              <span class="sys-value">{{ stats.todayCheckIns }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { getMembers, addMember, deleteMember } from '@/api/member';
+import { getMembers } from '@/api/member';
+import { getCoaches } from '@/api/coach';
+import { getCourses, getCourseStats } from '@/api/course';
+import { getLatestAnnouncements } from '@/api/announcement';
+import { getRevenueSummary } from '@/api/revenue';
+import { getProducts } from '@/api/product';
 import MemberTypeChart from '@/components/MemberTypeChart.vue';
 import NewMembersChart from '@/components/NewMembersChart.vue';
 
 const members = ref([]);
-const loading = ref(false);
-const showModal = ref(false);
-const submitting = ref(false);
-
-const formData = ref({
-  name: '',
-  phone: '',
-  type: '',
-  days_left: 0
+const recentCourses = ref([]);
+const announcements = ref([]);
+const stats = ref({
+  totalMembers: 0,
+  activeMembers: 0,
+  expiringSoon: 0,
+  newMembersToday: 0,
+  monthlyRevenue: 0,
+  coachCount: 0,
+  courseCount: 0,
+  productCount: 0,
+  todayCheckIns: 0
 });
 
-// 统计数据
-const todayNew = computed(() => {
-  const today = new Date().toISOString().slice(0, 10);
-  return members.value.filter(m => m.created_at && m.created_at.startsWith(today)).length;
-});
-
-const expiringSoon = computed(() =>
-  members.value.filter(m => m.days_left > 0 && m.days_left <= 7).length
-);
-
-// 获取会员列表
-const fetchMembers = async () => {
-  loading.value = true;
+const fetchDashboardData = async () => {
   try {
-    const res = await getMembers();
-    if (res.data.code === 200) {
-      members.value = res.data.data;
+    const [membersRes, coachesRes, coursesRes, courseStatsRes, annRes, revenueRes, productsRes] = await Promise.allSettled([
+      getMembers(),
+      getCoaches(),
+      getCourses({ page: 1, pageSize: 5 }),
+      getCourseStats(),
+      getLatestAnnouncements(),
+      getRevenueSummary(),
+      getProducts({ page: 1, pageSize: 1 })
+    ]);
+
+    if (membersRes.status === 'fulfilled' && membersRes.value.data.code === 200) {
+      const data = membersRes.value.data.data;
+      members.value = data;
+      const today = new Date().toISOString().slice(0, 10);
+      stats.value.totalMembers = data.length;
+      stats.value.activeMembers = data.filter(m => m.status === '有效').length;
+      stats.value.expiringSoon = data.filter(m => m.days_left > 0 && m.days_left <= 7).length;
+      stats.value.newMembersToday = data.filter(m => m.created_at && m.created_at.startsWith(today)).length;
+    }
+
+    if (coachesRes.status === 'fulfilled' && coachesRes.value.data.code === 200) {
+      stats.value.coachCount = coachesRes.value.data.data.length;
+    }
+
+    if (coursesRes.status === 'fulfilled' && coursesRes.value.data.code === 200) {
+      recentCourses.value = coursesRes.value.data.data.list?.slice(0, 5) || [];
+      stats.value.courseCount = coursesRes.value.data.data.total || 0;
+    }
+
+    if (revenueRes.status === 'fulfilled' && revenueRes.value.data.code === 200) {
+      stats.value.monthlyRevenue = revenueRes.value.data.data.monthRevenue || 0;
+      stats.value.todayCheckIns = revenueRes.value.data.data.todayCheckIns || 0;
+    }
+
+    if (annRes.status === 'fulfilled' && annRes.value.data.code === 200) {
+      announcements.value = annRes.value.data.data?.slice(0, 5) || [];
+    }
+
+    if (productsRes.status === 'fulfilled' && productsRes.value.data.code === 200) {
+      stats.value.productCount = productsRes.value.data.data.total || 0;
     }
   } catch (error) {
-    alert(error.response?.data?.message || '获取会员列表失败');
-  } finally {
-    loading.value = false;
+    console.error('Dashboard data fetch error:', error);
   }
 };
 
-// 添加会员
-const handleAddMember = async () => {
-  submitting.value = true;
-  try {
-    const res = await addMember(formData.value);
-    if (res.data.code === 200) {
-      closeModal();
-      fetchMembers();
-    }
-  } catch (error) {
-    alert(error.response?.data?.message || '添加失败');
-  } finally {
-    submitting.value = false;
-  }
-};
-
-// 删除会员
-const handleDelete = async (id) => {
-  const confirmed = window.confirm('确认要删除该会员吗？');
-  if (confirmed) {
-    try {
-      await deleteMember(id);
-      fetchMembers();
-    } catch (error) {
-      alert(error.response?.data?.message || '删除失败');
-    }
-  }
-};
-
-const handleEdit = (member) => {
-  alert(`编辑会员: ${member.name}`);
-};
-
-const openModal = () => {
-  formData.value = { name: '', phone: '', type: '', days_left: 0 };
-  showModal.value = true;
-};
-
-const closeModal = () => {
-  showModal.value = false;
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
 };
 
 onMounted(() => {
-  fetchMembers();
+  fetchDashboardData();
 });
 </script>
 
 <style scoped>
+.dashboard {
+  max-width: 1400px;
+}
+
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .stat-card {
   background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 22px 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.stat-label {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 8px;
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.stat-value {
+.stat-icon {
   font-size: 28px;
-  font-weight: 700;
-  color: #1f2937;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.stat-card-members .stat-icon { background: #eff6ff; }
+.stat-card-active .stat-icon { background: #ecfdf5; }
+.stat-card-warning .stat-icon { background: #fffbeb; }
+.stat-card-revenue .stat-icon { background: #fef2f2; }
+
+.stat-body { flex: 1; }
+.stat-label { font-size: 13px; color: #6b7280; margin-bottom: 4px; }
+.stat-value { font-size: 26px; font-weight: 700; color: #1f2937; line-height: 1.2; }
+.stat-change { font-size: 12px; color: #10b981; margin-top: 4px; font-weight: 500; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
 }
 
 .charts-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-bottom: 24px;
 }
 
-.action-bar {
-  margin-bottom: 20px;
-}
-
-.btn-add {
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  background: #10b981;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-add:hover {
-  background: #059669;
-}
-
-.table-container {
+.section-card {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 20px;
+  margin-bottom: 24px;
 }
 
-.section-title {
-  margin: 0 0 20px;
-  font-size: 20px;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 16px;
   font-weight: 600;
   color: #1f2937;
+  margin: 0;
 }
 
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: #6b7280;
+.card-more {
+  font-size: 13px;
+  color: #6366f1;
+  text-decoration: none;
 }
 
-.members-table {
+.dashboard-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.members-table thead tr {
+.dashboard-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dashboard-table td {
+  padding: 12px;
+  font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.dashboard-table tr:last-child td {
+  border-bottom: none;
+}
+
+.td-name {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.booking-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar {
+  width: 60px;
+  height: 6px;
+  background: #f3f4f6;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #818cf8);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.empty-cell {
+  text-align: center;
+  color: #9ca3af;
+  padding: 32px !important;
+}
+
+.announcement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.announcement-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.announcement-item:hover {
   background: #f3f4f6;
 }
 
-.members-table th {
-  padding: 12px 16px;
-  text-align: left;
-  font-weight: 700;
-  color: #374151;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.members-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.table-row:hover {
-  background: #eff6ff;
-}
-
-.row-even {
-  background: #f9fafb;
-}
-
-.row-even:hover {
-  background: #eff6ff;
-}
-
-.status-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
+.ann-type-badge {
+  padding: 2px 8px;
+  font-size: 11px;
   font-weight: 600;
-}
-
-.status-active {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.status-expired {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.btn-edit {
-  padding: 6px 12px;
-  margin-right: 8px;
-  font-size: 13px;
-  color: #4f46e5;
-  background: transparent;
-  border: 1px solid #4f46e5;
   border-radius: 4px;
-  cursor: pointer;
+  flex-shrink: 0;
+  height: fit-content;
+}
+
+.type-公告 { background: #eff6ff; color: #1d4ed8; }
+.type-活动 { background: #ecfdf5; color: #065f46; }
+.type-通知 { background: #fffbeb; color: #92400e; }
+
+.ann-content { flex: 1; min-width: 0; }
+.ann-title { font-size: 14px; font-weight: 500; color: #1f2937; margin-bottom: 2px; }
+.ann-date { font-size: 12px; color: #9ca3af; }
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #f9fafb;
+  border-radius: 10px;
+  text-decoration: none;
   transition: all 0.2s;
 }
 
-.btn-edit:hover {
-  background: #4f46e5;
-  color: #fff;
+.quick-action-btn:hover {
+  background: #eff6ff;
+  transform: translateY(-1px);
 }
 
-.btn-delete {
-  padding: 6px 12px;
-  font-size: 13px;
-  color: #ef4444;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: color 0.2s;
+.qa-icon { font-size: 20px; }
+.qa-label { font-size: 13px; font-weight: 500; color: #374151; }
+
+.system-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.btn-delete:hover {
-  color: #dc2626;
-  text-decoration: underline;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+.sys-stat {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  width: 90%;
-  max-width: 480px;
-  animation: modalIn 0.2s ease;
-}
-
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
+.sys-stat:last-child,
+.sys-stat:nth-last-child(2) {
+  border-bottom: none;
+}
+
+.sys-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.sys-value {
+  font-size: 16px;
   font-weight: 600;
   color: #1f2937;
 }
 
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
+@media (max-width: 1200px) {
+  .stats-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
 }
 
-.modal-close:hover {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.modal-form {
-  padding: 24px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 10px 14px;
-  font-size: 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  box-sizing: border-box;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.btn-cancel {
-  padding: 10px 20px;
-  font-size: 14px;
-  color: #6b7280;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-cancel:hover {
-  background: #f3f4f6;
-}
-
-.btn-confirm {
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  background: #10b981;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-confirm:hover:not(:disabled) {
-  background: #059669;
-}
-
-.btn-confirm:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+@media (max-width: 768px) {
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

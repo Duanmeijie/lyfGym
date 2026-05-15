@@ -13,9 +13,15 @@ const routes = [
     component: DashboardLayout,
     children: [
       { path: 'dashboard', name: 'Dashboard', component: () => import('../views/DashboardView.vue') },
+      { path: 'members', name: 'Members', component: () => import('../views/MemberView.vue') },
+      { path: 'members/:id', name: 'MemberDetail', component: () => import('../views/MemberDetailView.vue') },
       { path: 'coaches', name: 'Coaches', component: () => import('../views/CoachView.vue') },
       { path: 'courses', name: 'Courses', component: () => import('../views/CourseView.vue') },
-      { path: 'members', name: 'Members', component: () => import('../views/MemberView.vue') },
+      { path: 'bookings', name: 'Bookings', component: () => import('../views/BookingsView.vue') },
+      { path: 'products', name: 'Products', component: () => import('../views/ProductsView.vue') },
+      { path: 'orders', name: 'Orders', component: () => import('../views/OrdersView.vue') },
+      { path: 'revenue', name: 'Revenue', component: () => import('../views/RevenueView.vue') },
+      { path: 'announcements', name: 'Announcements', component: () => import('../views/AnnouncementsView.vue') },
       { path: '', redirect: '/dashboard' }
     ]
   },
@@ -27,16 +33,13 @@ const router = createRouter({
   routes
 });
 
-// 全局前置守卫
 router.beforeEach((to, from) => {
   const token = localStorage.getItem('token');
   const requiresAuth = to.meta.requiresAuth !== false;
   
-  // 需要认证的页面且没有token，跳转登录页
   if (requiresAuth && !token) {
     return '/login';
   } else if (to.path === '/login' && token) {
-    // 已登录访问登录页，跳转首页
     return '/dashboard';
   }
 });

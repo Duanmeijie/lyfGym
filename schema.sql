@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
+  role VARCHAR(20) DEFAULT 'admin',
+  real_name VARCHAR(50),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -23,6 +25,10 @@ CREATE TABLE IF NOT EXISTS members (
   status ENUM('有效', '过期', '冻结') DEFAULT '有效',
   weight DECIMAL(5,1),
   body_fat DECIMAL(4,1),
+  gender VARCHAR(10) DEFAULT '男',
+  birthday DATE,
+  emergency_contact VARCHAR(50),
+  emergency_phone VARCHAR(20),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -35,6 +41,9 @@ CREATE TABLE IF NOT EXISTS coaches (
   avatar_url VARCHAR(500),
   experience INT DEFAULT 0,
   is_gold BOOLEAN DEFAULT FALSE,
+  phone VARCHAR(20),
+  email VARCHAR(100),
+  certification VARCHAR(500),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -52,6 +61,8 @@ CREATE TABLE IF NOT EXISTS courses (
   max_capacity INT DEFAULT 20,
   booked_count INT DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
+  description VARCHAR(1000),
+  price DECIMAL(10,2) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (coach_id) REFERENCES coaches(id)
 );
@@ -71,7 +82,12 @@ CREATE TABLE IF NOT EXISTS bookings (
 CREATE TABLE IF NOT EXISTS orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   member_id INT,
+  order_no VARCHAR(50) UNIQUE,
+  type ENUM('membership', 'product', 'course') DEFAULT 'membership',
+  product_name VARCHAR(100),
   amount DECIMAL(10,2),
+  payment_method VARCHAR(20) DEFAULT '现金',
+  status ENUM('paid', 'refunded', 'pending') DEFAULT 'paid',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (member_id) REFERENCES members(id)
 );
@@ -80,8 +96,63 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE TABLE IF NOT EXISTS products (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
+  category VARCHAR(50) DEFAULT 'general',
   price DECIMAL(10,2),
+  cost DECIMAL(10,2),
   stock INT DEFAULT 0,
   image_url VARCHAR(500),
+  description VARCHAR(1000),
+  status ENUM('上架', '下架') DEFAULT '上架',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建member_body_records表（会员身体记录表）
+CREATE TABLE IF NOT EXISTS member_body_records (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  member_id INT NOT NULL,
+  weight DECIMAL(5,1),
+  body_fat DECIMAL(4,1),
+  muscle_mass DECIMAL(5,1),
+  bmi DECIMAL(4,1),
+  waistline DECIMAL(5,1),
+  record_date DATE DEFAULT (CURRENT_DATE),
+  notes VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+);
+
+-- 创建announcements表（公告表）
+CREATE TABLE IF NOT EXISTS announcements (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  type ENUM('公告', '活动', '通知') DEFAULT '公告',
+  priority ENUM('普通', '重要', '紧急') DEFAULT '普通',
+  status ENUM('已发布', '草稿', '已下线') DEFAULT '已发布',
+  created_by INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+-- 创建check_ins表（签到记录表）
+CREATE TABLE IF NOT EXISTS check_ins (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  member_id INT NOT NULL,
+  check_in_date DATE DEFAULT (CURRENT_DATE),
+  check_in_time TIME DEFAULT (CURRENT_TIME),
+  source VARCHAR(20) DEFAULT '前台',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+);
+
+-- 创建activity_logs表（操作日志表）
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT,
+  action VARCHAR(100) NOT NULL,
+  target_type VARCHAR(50),
+  target_id INT,
+  detail VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );

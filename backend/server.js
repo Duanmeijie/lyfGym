@@ -19,7 +19,13 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/members', require('./routes/member'));
 app.use('/api/coaches', require('./routes/coach'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/products', require('./routes/product'));
+app.use('/api/orders', require('./routes/order'));
 app.use('/api/courses', require('./routes/course'));
+app.use('/api/revenue', require('./routes/revenue'));
+app.use('/api/announcements', require('./routes/announcement'));
+app.use('/api/bookings', require('./routes/booking'));
+app.use('/api/members', require('./routes/member_detail'));
 app.use('/api', require('./routes/test'));
 
 // 测试接口
